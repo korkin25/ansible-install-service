@@ -44,6 +44,8 @@ services:
         owner: root
         group: root
         enabled: true
+        template_vars:
+          template_vars: value
       nginx_conf:
         src: "files/nginx/nginx.conf.j2"
         dest: "/etc/nginx/nginx.conf"
