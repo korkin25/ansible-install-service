@@ -1,13 +1,12 @@
-# vim: set filetype=yaml.ansible:
 ---
 - name: Debug configs for each service
   ansible.builtin.debug:
     msg:
-      - "service_details.key: {{ item.key }}"
-      - "service_details.value: {{ item.value }}"
+      - "service_details.key: {{ service_details.key }}"
+      - "service_details.value: {{ service_details.value }}"
   loop: "{{ services | dict2items }}"
   loop_control:
-    label: "{{ item.key }}"
+    label: "{{ service_details.key }}"
     loop_var: service_details
   when: services is defined
 
@@ -16,41 +15,32 @@
     name: "{{ item }}"
     state: present
   become: true
-  loop: "{{ services.values() | map(attribute='packages') | flatten | select('defined') | list }}"
-  when:
-    - services is defined
-    - item | length > 0
+  loop: "{{ services | dict2items | map(attribute='value.packages') | select('defined') | flatten | list }}"
+  when: services is defined
   loop_control:
     label: "{{ item }}"
 
-- name: Set fact for current service
-  ansible.builtin.set_fact:
-    current_service_details: "{{ item }}"
-  loop: "{{ services | dict2items }}"
-  loop_control:
-    label: "{{ item.key }}"
-    loop_var: service_details
-  when: services is defined
-
 - name: Deploy service config templates
   ansible.builtin.template:
-    src: "{{ item.value.src }}"
-    dest: "{{ item.value.dest }}"
-    mode: "{{ item.value.mode }}"
-    owner: "{{ item.value.owner | default('root') }}"
-    group: "{{ item.value.group | default('root') }}"
+    src: "{{ config.src }}"
+    dest: "{{ config.dest }}"
+    mode: "{{ config.mode }}"
+    owner: "{{ config.owner | default('root') }}"
+    group: "{{ config.group | default('root') }}"
   register: config_status
   become: true
-  loop: "{{ services.values() | map(attribute='configs') | list | sum(start=[]) }}"
+  loop: "{{ services | dict2items | map(attribute='value.configs') | select('defined') | flatten | list }}"
   loop_control:
-    label: "{{ item.key }}"
+    label: "{{ config.src }}"
   when:
     - services is defined
-    - item.value.enabled | default(false) | bool
+    - config.enabled | default(false) | bool
+  vars:
+    config: "{{ item }}"
   notify: restart services
 
 - name: Trigger service restart
   ansible.builtin.meta: flush_handlers
-  when:
+  when: 
     - services is defined
-    - config_status.changed
+    - config_status.results | selectattr('changed', 'equalto', true) | list | length > 0
