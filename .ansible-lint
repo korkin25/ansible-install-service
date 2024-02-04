@@ -1,0 +1,2 @@
+kinds:
+  - "tasks/main.yml": playbook

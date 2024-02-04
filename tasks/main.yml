@@ -1,81 +1,55 @@
 # vim: set filetype=yaml.ansible:
 ---
-- name: Manage Services
-  tags: 
-    - services
-  block:
-    - name: Debug and Install Services
-      block:
-        - name: Debug configs for {{ service_details.key }}
-          ansible.builtin.debug:
-            msg:
-              - "service_details.key: {{ service_details.key }}"
-              - "service_details.value: {{ service_details.value }}"
-          loop: "{{ services | dict2items }}"
-          loop_control:
-            label: "{{ service_details.key }}"
-            loop_var: service_details
+- name: Debug configs for each service
+  ansible.builtin.debug:
+    msg:
+      - "service_details.key: {{ item.key }}"
+      - "service_details.value: {{ item.value }}"
+  loop: "{{ services | dict2items }}"
+  loop_control:
+    label: "{{ item.key }}"
+    loop_var: service_details
+  when: services is defined
 
-        - name: Install services for {{ service_details.key }}
-          ansible.builtin.apt:
-            name: "{{ item }}"
-            state: present
-          become: true
-          loop: "{{ service_details.value.package }}"
-          when: service_details.value.package is defined and service_details.value.package | length > 0
+- name: Install services
+  ansible.builtin.apt:
+    name: "{{ item }}"
+    state: present
+  become: true
+  loop: "{{ services.values() | map(attribute='package') | flatten | select('defined') | list }}"
+  when:
+    - services is defined
+    - item | length > 0
+  loop_control:
+    label: "{{ item }}"
 
-      loop: "{{ services | dict2items }}"
-      loop_control:
-        label: "{{ service_details.key }}"
-        loop_var: service_details
+- name: Set fact for current service
+  ansible.builtin.set_fact:
+    current_service_details: "{{ item }}"
+  loop: "{{ services | dict2items }}"
+  loop_control:
+    label: "{{ item.key }}"
+    loop_var: service_details
+  when: services is defined
 
-    - name: Configure and Manage Services
-      block:
-        - name: Deploy config files and manage service {{ service_item.key }}
-          block:
-            - name: Set fact for current service
-              ansible.builtin.set_fact:
-                current_service_details: "{{ service_item }}"
-            
-            - name: Deploy service config templates
-              ansible.builtin.template:
-                src: "{{ config_item.value.src }}"
-                dest: "{{ config_item.value.dest }}"
-                mode: "{{ config_item.value.mode }}"
-                owner: "{{ config_item.value.owner | default('root') }}"
-                group: "{{ config_item.value.group | default('root') }}"
-              register: config_status
-              become: true
-              loop: "{{ service_item.value.configs | dict2items }}"
-              loop_control:
-                label: "{{ service_item.key }} - {{ config_item.key }}"
-                loop_var: config_item
-              when: config_item.value.enabled | default(false) | bool
+- name: Deploy service config templates
+  ansible.builtin.template:
+    src: "{{ item.value.src }}"
+    dest: "{{ item.value.dest }}"
+    mode: "{{ item.value.mode }}"
+    owner: "{{ item.value.owner | default('root') }}"
+    group: "{{ item.value.group | default('root') }}"
+  register: config_status
+  become: true
+  loop: "{{ services.values() | map(attribute='configs') | list | sum(start=[]) }}"
+  loop_control:
+    label: "{{ item.key }}"
+  when:
+    - services is defined
+    - item.value.enabled | default(false) | bool
 
-            - name: Trigger service restart
-              ansible.builtin.meta: flush_handlers
-              when: config_status.changed
-
-          loop: "{{ services | dict2items }}"
-          loop_control:
-            label: "{{ service_item.key }}"
-            loop_var: service_item
-
-    - name: Handlers
-      block:
-        - name: Restart service
-          ansible.builtin.service:
-            name: "{{ current_service_details.value.unit_name }}"
-            state: restarted
-          listen: "restart services"
-          become: true
-          when: current_service_details.value.unit_name is defined
-
-  handlers:
-    - name: restart services
-      ansible.builtin.service:
-        name: "{{ item }}"
-        state: restarted
-      listen: "restart services"
-      loop: "{{ services_to_restart }}"
-      become: true
+- name: Trigger service restart
+  ansible.builtin.meta: flush_handlers
+  when:
+    - services is defined
+    - config_status.changed
