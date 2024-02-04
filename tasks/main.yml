@@ -27,6 +27,7 @@
     mode: "{{ config.mode }}"
     owner: "{{ config.owner | default('root') }}"
     group: "{{ config.group | default('root') }}"
+    variables: "{{ config.template_vars | default({}) }}"
   register: config_status
   become: true
   loop: "{{ services | dict2items | map(attribute='value.configs') | select('defined') | flatten | list }}"
