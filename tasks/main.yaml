@@ -23,7 +23,7 @@
     label: "{{ service_details.key }}"
     loop_var: service_details
 
-- name: Deploy config files for service {{ service_details.key }}
+- name: Set_fact for current_service_details {{ service_item  }}
   tags:
     - services
   ansible.builtin.set_fact:
@@ -37,6 +37,10 @@
   tags:
     - services
   block:
+    - name: Debug config_item "{{ service_item }}"
+      ansible.builtin.debug:
+        msg: "Debug service_item: {{ service_item }}"
+
     - name: Deploy service config template for {{ config_item.value.dest }}
       ansible.builtin.template:
         src: "{{ config_item.value.src }}"
