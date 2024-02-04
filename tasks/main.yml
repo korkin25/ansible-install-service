@@ -16,7 +16,7 @@
     name: "{{ item }}"
     state: present
   become: true
-  loop: "{{ services.values() | map(attribute='package') | flatten | select('defined') | list }}"
+  loop: "{{ services.values() | map(attribute='packages') | flatten | select('defined') | list }}"
   when:
     - services is defined
     - item | length > 0
@@ -47,6 +47,7 @@
   when:
     - services is defined
     - item.value.enabled | default(false) | bool
+  notify: restart services
 
 - name: Trigger service restart
   ansible.builtin.meta: flush_handlers

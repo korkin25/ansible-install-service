@@ -1,9 +1,9 @@
 # vim: set filetype=yaml.ansible:
 ---
-- name: RESTART SERVICES
+- name: Restart services
   ansible.builtin.service:
     name: "{{ item }}"
     state: restarted
   listen: "restart services"
-  loop: "{{ services_to_restart }}"
+  loop: "{{ services.keys() | list }}"
   become: true
