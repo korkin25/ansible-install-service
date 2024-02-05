@@ -1,9 +1,10 @@
 ---
-- name: Debug configs for {{ service_details.key }}
+- name: Debug configs for services
   tags:
     - services
   ansible.builtin.debug:
     msg:
+      - all
       - "service_details.key: {{ service_details.key }}"
       - "service_details.value: {{ service_details.value }}"
   loop: "{{ services | default({}) | dict2items }}"
@@ -33,13 +34,13 @@
     label: "{{ service_item.key }}"
     loop_var: service_item
 
-- name: Deploy and manage service {{ current_service_details.key }}
+- name: Deploy and manage service
   tags:
     - services
   block:
-    - name: Debug config_item "{{ service_item }}"
+    - name: Debug config_item
       ansible.builtin.debug:
-        msg: "Debug service_item: {{ service_item }}"
+        msg: "Debug config_item: {{ config_item }}"
 
     - name: Deploy service config template for {{ config_item.value.dest }}
       ansible.builtin.template:
