@@ -24,12 +24,12 @@
     label: "{{ service_details.key }}"
     loop_var: service_details
 
-- name: Set_fact for current_service_details {{ service_item  }}
+- name: Set_fact for current_service_details {{ service_item }}
   tags:
     - services
   ansible.builtin.set_fact:
     current_service_details: "{{ service_item }}"
-  loop: "{{ services | default({})| dict2items }}"
+  loop: "{{ services | default({}) | dict2items }}"
   loop_control:
     label: "{{ service_item.key }}"
     loop_var: service_item
@@ -51,7 +51,7 @@
         group: "{{ config_item.value.group | default('root') }}"
       register: config_status
       become: true
-      loop: "{{ current_service_details.value.configs | default({}) |  dict2items }}"
+      loop: "{{ current_service_details.value.configs | default({}) | dict2items }}"
       loop_control:
         label: "{{ current_service_details.key }} - {{ config_item.key }}"
         loop_var: config_item
