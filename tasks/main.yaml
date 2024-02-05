@@ -50,7 +50,7 @@
       loop_control:
         label: "{{ current_service_details.key }} - {{ config_item.key }}"
         loop_var: config_item
-      when: config_item.value.enabled | default(false) | bool
+      when: config_item.value.enabled | default(true) | bool
 
     - name: Restart service {{ current_service_details.key }}
       ansible.builtin.service:
