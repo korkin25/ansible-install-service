@@ -45,7 +45,7 @@
         label: "{{ current_service_details.key }} - {{ config_item.key }}"
         loop_var: config_item
       when: config_item.value.enabled | default(true) | bool
-      
+
     - name: Deploy service config template
       ansible.builtin.template:
         src: "{{ config_item.value.src }}"
