@@ -37,13 +37,14 @@
   tags:
     - services
   block:
-    - name: Deploy service config template for {{ config_item.value.dest }}
+    - name: Deploy service config template
       ansible.builtin.template:
         src: "{{ config_item.value.src }}"
         dest: "{{ config_item.value.dest }}"
         mode: "{{ config_item.value.mode }}"
         owner: "{{ config_item.value.owner | default('root') }}"
         group: "{{ config_item.value.group | default('root') }}"
+        variables: "{{ config_item.value.template_vars | default({}) }}"
       register: config_status
       become: true
       loop: "{{ current_service_details.value.configs | default({}) | dict2items }}"
