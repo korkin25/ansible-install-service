@@ -37,6 +37,15 @@
   tags:
     - services
   block:
+    - name: Load template variables
+      ansible.builtin.set_fact:
+        template_vars: "{{ config_item.value.template_vars | default({}) }}"
+      loop: "{{ current_service_details.value.configs | default({}) | dict2items }}"
+      loop_control:
+        label: "{{ current_service_details.key }} - {{ config_item.key }}"
+        loop_var: config_item
+      when: config_item.value.enabled | default(true) | bool
+      
     - name: Deploy service config template
       ansible.builtin.template:
         src: "{{ config_item.value.src }}"
@@ -44,7 +53,7 @@
         mode: "{{ config_item.value.mode }}"
         owner: "{{ config_item.value.owner | default('root') }}"
         group: "{{ config_item.value.group | default('root') }}"
-        vars: "{{ config_item.value.template_vars | default({}) }}"
+        vars: "{{ template_vars }}"
       register: config_status
       become: true
       loop: "{{ current_service_details.value.configs | default({}) | dict2items }}"
