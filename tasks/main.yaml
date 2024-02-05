@@ -52,8 +52,7 @@
         dest: "{{ config_item.value.dest }}"
         mode: "{{ config_item.value.mode }}"
         owner: "{{ config_item.value.owner | default('root') }}"
-        group: "{{ config_item.value.group | default('root') }}"
-        vars: "{{ template_vars }}"
+        group: "{{ config_item.value.group | default('root') }}"        
       register: config_status
       become: true
       loop: "{{ current_service_details.value.configs | default({}) | dict2items }}"
