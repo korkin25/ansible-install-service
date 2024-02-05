@@ -4,7 +4,6 @@
     - services
   ansible.builtin.debug:
     msg:
-      - all
       - "service_details.key: {{ service_details.key }}"
       - "service_details.value: {{ service_details.value }}"
   loop: "{{ services | default({}) | dict2items }}"
@@ -24,7 +23,7 @@
     label: "{{ service_details.key }}"
     loop_var: service_details
 
-- name: Set_fact for current_service_details {{ service_item }}
+- name: Set_fact for current_service_details
   tags:
     - services
   ansible.builtin.set_fact:
@@ -38,10 +37,6 @@
   tags:
     - services
   block:
-    - name: Debug config_item
-      ansible.builtin.debug:
-        msg: "Debug config_item: {{ config_item }}"
-
     - name: Deploy service config template for {{ config_item.value.dest }}
       ansible.builtin.template:
         src: "{{ config_item.value.src }}"
