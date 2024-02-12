@@ -1,0 +1,69 @@
+- name: Load template variables
+  ansible.builtin.set_fact:
+    template_vars: "{{ current_service_details.value.configs | default({}) }}"
+  loop: "{{ current_service_details.value.configs | default({}) | dict2items }}"
+  loop_control:
+    label: "{{ current_service_details.key }} - {{ item.key }}"
+    loop_var: config_item
+  when: item.value.enabled | default(true) | bool
+
+- name: Deploy service config template
+  ansible.builtin.template:
+    src: "{{ config_item.value.src }}"
+    dest: "{{ config_item.value.dest }}"
+    mode: "{{ config_item.value.mode | default('0644') }}"
+    owner: "{{ config_item.value.owner | default('root') }}"
+    group: "{{ config_item.value.group | default('root') }}"
+  register: config_status
+  become: true
+  loop: "{{ template_vars | dict2items }}"
+  loop_control:
+    label: "{{ current_service_details.key }} - {{ item.key }}"
+    loop_var: config_item
+  when: config_item.value.enabled | default(true) | bool
+
+- name: Restart service
+  ansible.builtin.service:
+    name: "{{ current_service_details.value.unit_name }}"
+    state: restarted
+  become: true
+  when: config_status is defined and config_status.changed and current_service_details.value.enabled | default(false) | bool
+  ignore_errors: true
+
+- name: Check if log_file exists
+  ansible.builtin.stat:
+    path: "{{ current_service_details.value.log_file }}"
+  register: log_file_stat
+  when: current_service_details.value.log_file is defined and current_service_details.value.enabled | default(false) | bool
+
+- name: Fetch and display logs if service restart failed
+  block:
+    - name: Fetch logs from service log_file
+      ansible.builtin.command:
+        cmd: "tail -n 10 {{ current_service_details.value.log_file }}"
+      register: file_logs
+      changed_when: false
+      when: log_file_stat.stat.exists and current_service_details.value.enabled | default(false) | bool
+
+    - name: Display logs from service log_file
+      ansible.builtin.debug:
+        var: file_logs.stdout_lines
+      when: file_logs.stdout_lines | length > 0 and current_service_details.value.enabled | default(false) | bool
+
+    - name: Fetching logs from journalctl for the service
+      ansible.builtin.command:
+        cmd: "journalctl -u {{ current_service_details.value.unit_name }}.service -n 10 --no-pager"
+      register: journal_logs
+      changed_when: false
+      when: current_service_details.value.enabled | default(false) | bool
+
+    - name: Display journalctl logs
+      ansible.builtin.debug:
+        var: journal_logs.stdout_lines
+      when: journal_logs.stdout_lines | default([]) | length > 0 and current_service_details.value.enabled | default(false) | bool
+  when: config_status is defined and config_status.changed and config_status.failed and current_service_details.value.enabled | default(false) | bool
+
+- name: Final status of service management
+  ansible.builtin.fail:
+    msg: "Error managing service {{ current_service_details.value.unit_name }}"
+  when: config_status is defined and config_status.failed and current_service_details.value.enabled | default(false) | bool

@@ -24,83 +24,9 @@
     loop_var: service_details
 
 - name: Deploy and manage services
-  tags:
-    - services
+  tags: services
   loop: "{{ services | default({}) | dict2items }}"
   loop_control:
     label: "{{ item.key }}"
     loop_var: current_service_details
-  block:
-    - name: Load template variables
-      ansible.builtin.set_fact:
-        template_vars: "{{ current_service_details.value.configs | default({}) | dict2items }}"
-      loop: "{{ current_service_details.value.configs | default({}) | dict2items }}"
-      loop_control:
-        label: "{{ current_service_details.key }} - {{ config_item.key }}"
-        loop_var: config_item
-      when: config_item.value.enabled | default(true) | bool
-
-    - name: Deploy service config template
-      ansible.builtin.template:
-        src: "{{ config_item.value.src }}"
-        dest: "{{ config_item.value.dest }}"
-        mode: "{{ config_item.value.mode }}"
-        owner: "{{ config_item.value.owner | default('root') }}"
-        group: "{{ config_item.value.group | default('root') }}"
-      register: config_status
-      become: true
-      loop: "{{ template_vars }}"
-      loop_control:
-        label: "{{ current_service_details.key }} - {{ config_item.key }}"
-        loop_var: config_item
-      when: config_item.value.enabled | default(true) | bool
-
-    - name: Restart service
-      ansible.builtin.service:
-        name: "{{ current_service_details.value.unit_name }}"
-        state: restarted
-      register: result
-      become: true
-      when:
-        - config_status.changed and current_service_details.value.enabled | default(false) | bool
-      ignore_errors: true
-
-    - name: Additional steps for error handling and logs
-      when: result.failed | default(false)
-      block:
-        - name: Check if log_file exists
-          ansible.builtin.stat:
-            path: "{{ current_service_details.value.log_file }}"
-          register: log_file_stat
-          when: current_service_details.value.log_file is defined
-
-        - name: Fetch and display logs if service restart failed
-          block:
-            - name: Fetch logs from service log_file
-              ansible.builtin.command:
-                cmd: "tail -n 10 {{ current_service_details.value.log_file }}"
-              register: file_logs
-              changed_when: false
-              when: log_file_stat.stat.exists
-
-            - name: Display logs from
-              ansible.builtin.debug:
-                var: file_logs.stdout_lines
-              changed_when: false
-              when: file_logs.stdout_lines | length > 0
-
-            - name: Fetching logs from journalctl
-              ansible.builtin.command:
-                cmd: "journalctl -u {{ current_service_details.value.unit_name }}.service -n 10 --no-pager"
-              register: logs
-              changed_when: false
-              when: (current_service_details.value.log_file is defined) and log_file_stat.stat.exists
-
-            - name: Display journalctl logs
-              ansible.builtin.debug:
-                var: logs.stdout_lines
-              when: logs.stdout_lines | default([]) | length > 0
-
-        - name: Final status of service {{ current_service_details.value.unit_name }}
-          ansible.builtin.fail:
-            msg: "Error managing service {{ current_service_details.value.unit_name }}"
+  include_tasks: manage-service.yml
