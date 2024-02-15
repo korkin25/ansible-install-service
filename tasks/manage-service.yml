@@ -62,11 +62,9 @@
         cmd: "journalctl -u {{ current_service_details.value.unit_name }}.service -n 10 --no-pager"
       register: journal_logs
       changed_when: false
-      when: current_service_details.value.enabled | default(false) | bool and and current_service_details.value.unit_name is defined
+      when: current_service_details.value.enabled | default(false) | bool and current_service_details.value.unit_name is defined
 
     - name: Display journalctl logs
       ansible.builtin.debug:
         var: journal_logs.stdout_lines
       when: journal_logs.stdout_lines | default([]) | length > 0 and current_service_details.value.enabled | default(true) | bool
-
-
