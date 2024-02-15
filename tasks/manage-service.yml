@@ -33,6 +33,13 @@
   register: service_status
   ignore_errors: true
 
+- name: Debug service_status
+  ansible.builtin.debug:
+    msg:
+      - "Error managing service {{ current_service_details.value.unit_name }}"
+      - service_status: "{{ service_status }}"
+  when: service_status is defined and service_status.failed and current_service_details.value.enabled | default(false) | bool
+
 - name: Check if log_file exists
   ansible.builtin.stat:
     path: "{{ current_service_details.value.log_file }}"
