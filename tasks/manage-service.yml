@@ -72,4 +72,4 @@
 - name: "Service failed: {{ current_service_details.key }}"
   ansible.builtin.fail:
     msg: "{{ current_service_details.key }} service failed to restart"
-  config_status is defined and config_status.changed and current_service_details.value.enabled | default(true) | bool and service_status.failed
+  when: config_status is defined and config_status.changed and current_service_details.value.enabled | default(true) | bool and service_status.failed
