@@ -38,7 +38,7 @@
     msg:
       - "Error managing service {{ current_service_details.value.unit_name }}"
       - service_status: "{{ service_status }}"
-  when: service_status is defined and service_status.failed and current_service_details.value.enabled | default(false) | bool
+  when: service_status is defined
 
 - name: Check if log_file exists
   ansible.builtin.stat:
