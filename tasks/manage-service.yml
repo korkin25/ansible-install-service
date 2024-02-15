@@ -15,14 +15,13 @@
     owner: "{{ config_item.value.owner | default('root') }}"
     group: "{{ config_item.value.group | default('root') }}"
     backup: true
-    force: false
   vars:
     template_vars: "{{ config_item.value.vars | default({}) }}"
   register: config_status
   become: true
-  loop: "{{ template_vars | dict2items }}"
+  loop: "{{ service_configs | dict2items }}"
   loop_control:
-    label: "{{ current_service_details.key }} - {{ item.key }}"
+    label: "{{ current_service_details.key }} - {{ config_item.key }}"
     loop_var: config_item
   when: config_item.value.enabled | default(true) | bool
 
