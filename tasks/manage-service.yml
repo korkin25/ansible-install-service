@@ -25,29 +25,25 @@
   when: config_item.value.enabled | default(true) | bool
 
 - name: Restart service
-  ansible.builtin.service:
+  ansible.builtin.systemd_service:
     name: "{{ current_service_details.value.unit_name }}"
     state: restarted
+    enabled: true
+    daemon_reload: true
+    force: true
   become: true
-  when: config_status is defined and config_status.changed and current_service_details.value.enabled | default(false) | bool
+  when: config_status is defined and config_status.changed and current_service_details.value.unit_name is defined and current_service_details.value.enabled | default(true) | bool
   register: service_status
   ignore_errors: true
-
-- name: Debug service_status
-  ansible.builtin.debug:
-    msg:
-      - "Error managing service {{ current_service_details.value.unit_name }}"
-      - service_status: "{{ service_status }}"
-  when: service_status is defined
 
 - name: Check if log_file exists
   ansible.builtin.stat:
     path: "{{ current_service_details.value.log_file }}"
   register: log_file_stat
-  when: current_service_details.value.log_file is defined and current_service_details.value.enabled | default(false) | bool
+  when: current_service_details.value.log_file is defined and current_service_details.value.enabled | default(true) | bool
 
 - name: Fetch and display logs if service restart failed
-  when: config_status is defined and config_status.changed and config_status.failed and current_service_details.value.enabled | default(false) | bool
+  when: config_status is defined and config_status.changed and current_service_details.value.enabled | default(false) | bool
   block:
     - name: Fetch logs from service log_file
       ansible.builtin.command:
@@ -83,4 +79,4 @@
 #- name: Final status of service management
 #  ansible.builtin.fail:
 #    msg: "Error managing service {{ current_service_details.value.unit_name }}"
-#  when: config_status is defined and current_service_details.value.enabled | default(false) | bool
+#  when: config_status is defined and current_service_details.value.enabled | default(true) | bool
