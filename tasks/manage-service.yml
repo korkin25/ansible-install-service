@@ -27,7 +27,7 @@
 - name: Restart service
   ansible.builtin.systemd_service:
     name: "{{ current_service_details.value.unit_name }}"
-    state: restarted
+    state: reloaded
     enabled: true
     daemon_reload: true
     force: true
