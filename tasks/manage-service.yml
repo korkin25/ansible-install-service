@@ -67,7 +67,7 @@
       when: journal_logs.stdout_lines | default([]) | length > 0 and current_service_details.value.enabled | default(false) | bool
 
 - name: Debug config_status
-  ansible.builtin.fail:
+  ansible.builtin.debug:
     msg:
       - "Error managing service {{ current_service_details.value.unit_name }}"
       - config_status: "{{ config_status }}"
