@@ -36,6 +36,11 @@
   register: service_status
   ignore_errors: true
 
+- name: Debug service_status
+  ansible.builtin.debug:
+    var: service_status
+  when: service_status is defined and service_status.changed and current_service_details.value.enabled | default(true) | bool
+
 - name: Check if log_file exists
   ansible.builtin.stat:
     path: "{{ current_service_details.value.log_file }}"
@@ -69,14 +74,4 @@
         var: journal_logs.stdout_lines
       when: journal_logs.stdout_lines | default([]) | length > 0 and current_service_details.value.enabled | default(false) | bool
 
-- name: Debug config_status
-  ansible.builtin.debug:
-    msg:
-      - "Error managing service {{ current_service_details.value.unit_name }}"
-      - config_status: "{{ config_status }}"
-  when: config_status is defined
 
-- name: Check if service tasks failed
-  ansible.builtin.fail:
-    msg: "Error managing service {{ current_service_details.value.unit_name }}"
-  when: config_status is defined and config_status.results | default([]) | map(attribute='failed') | any
