@@ -27,6 +27,6 @@
   tags: services
   loop: "{{ services | default({}) | dict2items }}"
   loop_control:
-    label: "{{ item.key }}"
+    label: "{{ current_service_details.key }}"
     loop_var: current_service_details
-  include_tasks: manage-service.yml
+  ansible.builtin.include_tasks: manage-service.yml
