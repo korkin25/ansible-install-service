@@ -54,7 +54,7 @@
 
     - name: Display logs from service log_file
       ansible.builtin.debug:
-        msg: file_logs.stdout_lines
+        var: file_logs.stdout_lines
       when: file_logs.stdout_lines | length > 0
 
     - name: Fetching logs from journalctl for the service
@@ -66,7 +66,7 @@
 
     - name: Display journalctl logs
       ansible.builtin.debug:
-        msg: journal_logs.stdout_lines
+        var: journal_logs.stdout_lines
       when: journal_logs.stdout_lines | default([]) | length > 0
 
     - name: "Service failed: {{ current_service_details.key }}"
