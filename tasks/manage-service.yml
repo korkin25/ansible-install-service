@@ -69,6 +69,6 @@
         msg: journal_logs.stdout_lines
       when: journal_logs.stdout_lines | default([]) | length > 0
 
-    - name: {{ current_service_details.key }} service failed
+    - name: "Service failed: {{ current_service_details.key }}"
       ansible.builtin.fail:
         msg: "{{ current_service_details.key }} service failed to restart"
