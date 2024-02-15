@@ -14,7 +14,6 @@
     mode: "{{ config_item.value.mode | default('0644') }}"
     owner: "{{ config_item.value.owner | default('root') }}"
     group: "{{ config_item.value.group | default('root') }}"
-    backup: true
   vars:
     template_vars: "{{ config_item.value.template_vars | default({}) }}"
   register: config_status
