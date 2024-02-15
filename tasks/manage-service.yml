@@ -16,7 +16,7 @@
     group: "{{ config_item.value.group | default('root') }}"
     backup: true
   vars:
-    template_vars: "{{ config_item.value.vars | default({}) }}"
+    template_vars: "{{ config_item.value.template_vars | default({}) }}"
   register: config_status
   become: true
   loop: "{{ service_configs | dict2items }}"
