@@ -36,42 +36,37 @@
   register: service_status
   ignore_errors: true
 
-- name: Debug service_status
-  ansible.builtin.debug:
-    var: service_status
-  when: service_status is defined and service_status.changed and current_service_details.value.enabled | default(true) | bool
-
-- name: Check if log_file exists
-  ansible.builtin.stat:
-    path: "{{ current_service_details.value.log_file }}"
-  register: log_file_stat
-  when: current_service_details.value.log_file is defined and current_service_details.value.enabled | default(true) | bool
-
 - name: Fetch and display logs if service restart failed
   when: config_status is defined and config_status.changed and current_service_details.value.enabled | default(false) | bool and service_status.failed
   block:
+    - name: Check if log_file exists
+      ansible.builtin.stat:
+        path: "{{ current_service_details.value.log_file }}"
+      register: log_file_stat
+      when: current_service_details.value.log_file is defined and current_service_details.value.enabled | default(true) | bool
+
     - name: Fetch logs from service log_file
       ansible.builtin.command:
         cmd: "tail -n 10 {{ current_service_details.value.log_file }}"
       register: file_logs
       changed_when: false
-      when: log_file_stat.stat.exists and current_service_details.value.enabled | default(false) | bool
+      when: log_file_stat.stat.exists and current_service_details.value.enabled | default(true) | bool
 
     - name: Display logs from service log_file
       ansible.builtin.debug:
         var: file_logs.stdout_lines
-      when: file_logs.stdout_lines | length > 0 and current_service_details.value.enabled | default(false) | bool
+      when: file_logs.stdout_lines | length > 0 and current_service_details.value.enabled | default(true) | bool
 
     - name: Fetching logs from journalctl for the service
       ansible.builtin.command:
         cmd: "journalctl -u {{ current_service_details.value.unit_name }}.service -n 10 --no-pager"
       register: journal_logs
       changed_when: false
-      when: current_service_details.value.enabled | default(false) | bool
+      when: current_service_details.value.enabled | default(false) | bool and and current_service_details.value.unit_name is defined
 
     - name: Display journalctl logs
       ansible.builtin.debug:
         var: journal_logs.stdout_lines
-      when: journal_logs.stdout_lines | default([]) | length > 0 and current_service_details.value.enabled | default(false) | bool
+      when: journal_logs.stdout_lines | default([]) | length > 0 and current_service_details.value.enabled | default(true) | bool
 
 
