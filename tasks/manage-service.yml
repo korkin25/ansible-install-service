@@ -76,7 +76,7 @@
       - config_status: "{{ config_status }}"
   when: config_status is defined
 
-#- name: Final status of service management
-#  ansible.builtin.fail:
-#    msg: "Error managing service {{ current_service_details.value.unit_name }}"
-#  when: config_status is defined and current_service_details.value.enabled | default(true) | bool
+- name: Check if service tasks failed
+  ansible.builtin.fail:
+    msg: "Error managing service {{ current_service_details.value.unit_name }}"
+  when: config_status is defined and config_status.results | default([]) | map(attribute='failed') | any
