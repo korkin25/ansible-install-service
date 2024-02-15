@@ -1,16 +1,4 @@
 ---
-- name: Debug configs for services
-  tags:
-    - services
-  ansible.builtin.debug:
-    msg:
-      - "service_details.key: {{ service_details.key }}"
-      - "service_details.value: {{ service_details.value }}"
-  loop: "{{ services | default({}) | dict2items }}"
-  loop_control:
-    label: "{{ service_details.key }}"
-    loop_var: service_details
-
 - name: Install service
   tags:
     - services
