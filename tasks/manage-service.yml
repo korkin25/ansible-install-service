@@ -76,4 +76,4 @@
 - name: Final status of service management
   ansible.builtin.fail:
     msg: "Error managing service {{ current_service_details.value.unit_name }}"
-  when: config_status is defined and config_status.failed and current_service_details.value.enabled | default(false) | bool
+  when: config_status is defined and current_service_details.value.enabled | default(false) | bool
